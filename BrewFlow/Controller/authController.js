@@ -1,13 +1,13 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs'); // Para comparar contraseñas hasheadas
-const db = require('../db'); // Suponiendo una conexión a Cloud SQL
+const db = require('../db'); // Pool de conexión a PostgreSQL
 
 const login = async (req, res) => {
     const { usuario_correo, usuario_contrasena } = req.body;
 
     try {
-        // 1. Verificar existencia del usuario 
-        const [rows] = await db.execute('SELECT * FROM Usuario WHERE usuario_correo = ?', [usuario_correo]);
+        // 1. Verificar existencia del usuario
+        const { rows } = await db.query('SELECT * FROM usuario WHERE usuario_correo = $1', [usuario_correo]);
         const user = rows[0];
 
         if (!user) {
@@ -24,11 +24,11 @@ const login = async (req, res) => {
 
         if (isMatch) {
             // Éxito: Reiniciar intentos fallidos y generar Token (JWT)
-            await db.execute('UPDATE Usuario SET usuario_intentos_fallidos = 0 WHERE usuario_id = ?', [user.usuario_id]);
+            await db.query('UPDATE usuario SET usuario_intentos_fallidos = 0 WHERE usuario_id = $1', [user.usuario_id]);
 
             const token = jwt.sign(
                 { id: user.usuario_id, rol_id: user.rol_id },
-                process.env.JWT_SECRET, 
+                process.env.JWT_SECRET,
                 { expiresIn: '30m' }
             );
 
@@ -36,13 +36,13 @@ const login = async (req, res) => {
         } else {
             // 4. Manejo de intentos fallidos
             const nuevosIntentos = user.usuario_intentos_fallidos + 1;
-            
+
             if (nuevosIntentos >= 5) {
                 // Bloqueo automático al alcanzar el límite
-                await db.execute('UPDATE Usuario SET usuario_intentos_fallidos = ?, usuario_estado_cuenta = "BLOQUEADO" WHERE usuario_id = ?', [nuevosIntentos, user.usuario_id]);
+                await db.query("UPDATE usuario SET usuario_intentos_fallidos = $1, usuario_estado_cuenta = 'BLOQUEADO' WHERE usuario_id = $2", [nuevosIntentos, user.usuario_id]);
                 return res.status(403).json({ message: "Cuenta bloqueada por múltiples intentos fallidos" });
             } else {
-                await db.execute('UPDATE Usuario SET usuario_intentos_fallidos = ? WHERE usuario_id = ?', [nuevosIntentos, user.usuario_id]);
+                await db.query('UPDATE usuario SET usuario_intentos_fallidos = $1 WHERE usuario_id = $2', [nuevosIntentos, user.usuario_id]);
                 return res.status(401).json({ message: "Credenciales incorrectas" });
             }
         }
