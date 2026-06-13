@@ -1,13 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const { crearProveedor, obtenerProveedores, eliminarProveedor } = require('../controllers/proveedorController');
-const { verificarToken } = require('../middleware/authMiddleware');
+// Importamos también el middleware de validación de roles (esAdmin)
+const { verificarToken, esAdmin } = require('../middleware/authMiddleware');
 
-// Listar proveedores (Acceso para Admin y Bodega)
+// 1. Listar proveedores (Acceso para consulta operativa)
+// UR 5.2: Filtros y consultas de inventario.
 router.get('/', verificarToken, obtenerProveedores);
 
-// Crear y Eliminar (Protegido por JWT)
-router.post('/', verificarToken, crearProveedor);
-router.delete('/:id', verificarToken, eliminarProveedor);
+// 2. Registrar Proveedor (UR 2.2)
+// Restringido estrictamente a ADMIN según la matriz de permisos de la sección A.2
+router.post('/', verificarToken, esAdmin, crearProveedor);
+
+// 3. Eliminar Proveedor
+// Nota: Realiza eliminación física por falta de columna "estado" en public.proveedor
+router.delete('/:id', verificarToken, esAdmin, eliminarProveedor);
 
 module.exports = router;

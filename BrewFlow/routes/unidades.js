@@ -1,10 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { crearUnidad, obtenerUnidades, desactivarUnidad } = require('../controllers/unidadMedidaController');
-const { verificarToken, esAdmin } = require('../middleware/authMiddleware');
+const { obtenerUnidades } = require('../controllers/unidadMedidaController');
+const { verificarToken } = require('../middleware/authMiddleware');
 
+// Solo permitimos obtener el catálogo para llenar los select del frontend
 router.get('/', verificarToken, obtenerUnidades);
-router.post('/', verificarToken, esAdmin, crearUnidad);
-router.delete('/:id', verificarToken, esAdmin, desactivarUnidad);
 
 module.exports = router;

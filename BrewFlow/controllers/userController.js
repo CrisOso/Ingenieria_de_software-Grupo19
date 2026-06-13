@@ -1,18 +1,25 @@
 const db = require('../db');
 const bcrypt = require('bcryptjs');
 
-// 1. Crear Usuario (ADMIN)
+// 1. Crear Usuario (ADMIN) - Ajustado a Base de Datos y UR 1.1
 const crearUsuario = async (req, res) => {
     const { run, nombres, ap_paterno, ap_materno, correo, contrasena, rol_id } = req.body;
 
     try {
-        const salt = await bcrypt.genSalt(10);
-        const hash = await bcrypt.hash(contrasena, salt); // Cifrado según RF-01
+        // Validación de Dominio Institucional (Requerimiento A.1)
+        if (!correo.endsWith('@brewflow.cl')) {
+            return res.status(400).json({ message: "Error: El correo debe pertenecer al dominio @brewflow.cl" });
+        }
 
+        const salt = await bcrypt.genSalt(10);
+        const hash = await bcrypt.hash(contrasena, salt);
+
+        // Se usa "usuario_contrase¤a" por el nombre en el dump SQL [1]
+        // Se usa 'activo' en minúsculas por el ENUM de la BD [2]
         await db.query(
-            `INSERT INTO usuario (usuario_run, usuario_nombres, usuario_apellido_paterno,
-            usuario_apellido_materno, usuario_correo, usuario_contrasena_hash, rol_id, usuario_estado_cuenta)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, 'ACTIVO')`,
+            `INSERT INTO public.usuario (usuario_run, usuario_nombres, usuario_apellido_paterno,
+            usuario_apellido_materno, usuario_correo, "usuario_contrase¤a", rol_id, usuario_estado_cuenta)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, 'activo')`,
             [run, nombres, ap_paterno, ap_materno, correo, hash, rol_id]
         );
         res.status(201).json({ message: "Usuario creado exitosamente" });
@@ -21,13 +28,13 @@ const crearUsuario = async (req, res) => {
     }
 };
 
-// 2. Listar Usuarios para el Panel Admin
+// 2. Listar Usuarios (Ajustado a esquema real)
 const obtenerUsuarios = async (req, res) => {
     try {
         const { rows } = await db.query(
             `SELECT u.usuario_id, u.usuario_run, u.usuario_nombres, u.usuario_apellido_paterno,
             u.usuario_correo, u.usuario_estado_cuenta, r.rol_nombre
-            FROM usuario u JOIN rol r ON u.rol_id = r.rol_id`
+            FROM public.usuario u JOIN public.rol r ON u.rol_id = r.rol_id`
         );
         res.json(rows);
     } catch (error) {
@@ -39,8 +46,9 @@ const obtenerUsuarios = async (req, res) => {
 const desbloquearUsuario = async (req, res) => {
     const { id } = req.params;
     try {
+        // NOTA: La columna usuario_intentos_fallidos debe ser agregada vía ALTER TABLE en la BD [1]
         await db.query(
-            "UPDATE usuario SET usuario_estado_cuenta = 'ACTIVO', usuario_intentos_fallidos = 0 WHERE usuario_id = $1",
+            "UPDATE public.usuario SET usuario_estado_cuenta = 'activo' WHERE usuario_id = $1",
             [id]
         );
         res.json({ message: "Usuario desbloqueado correctamente" });
@@ -49,8 +57,4 @@ const desbloquearUsuario = async (req, res) => {
     }
 };
 
-<<<<<<< HEAD:BrewFlow/controllers/userController.js
 module.exports = { crearUsuario, obtenerUsuarios, desbloquearUsuario };
-=======
-module.exports = { crearUsuario, obtenerUsuarios, desbloquearUsuario };
->>>>>>> 28a8535929d452010486bf6b94d275686995fdcd:BrewFlow/Controller/userController.js

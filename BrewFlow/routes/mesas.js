@@ -1,8 +1,12 @@
-const router = require('express').Router();
-const { getMesas, updateMesaEstado } = require('../controllers/mesaController');
+const express = require('express');
+const router = express.Router();
+const { obtenerMesas, actualizarEstadoMesa } = require('../controllers/mesaController');
 const { verificarToken } = require('../middleware/authMiddleware');
 
-router.get('/', verificarToken, getMesas);
-router.patch('/estado', verificarToken, updateMesaEstado);
+// RF-21: Listar mesas para visualización del salón (Protegido por JWT)
+router.get('/', verificarToken, obtenerMesas);
+
+// UR M.2: Cambiar estado de mesa (Apertura/Cierre lógico)
+router.patch('/:id/estado', verificarToken, actualizarEstadoMesa);
 
 module.exports = router;
