@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { crearUsuario, obtenerUsuarios, desbloquearUsuario } = require('../Controller/userController');
+const { crearUsuario, obtenerUsuarios, desbloquearUsuario } = require('../controllers/userController');
 const { verificarToken, esAdmin } = require('../middleware/authMiddleware');
 
 router.post('/', verificarToken, esAdmin, crearUsuario);

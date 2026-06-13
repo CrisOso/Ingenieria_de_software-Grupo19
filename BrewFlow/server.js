@@ -5,6 +5,9 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const mesaRoutes = require('./routes/mesas');
 const usuarioRoutes = require('./routes/usuarios');
+const proveedorRoutes = require('./routes/proveedores');
+const unidadRoutes = require('./routes/unidades');
+const ubicacionRoutes = require('./routes/ubicaciones');
 
 const app = express();
 app.use(cors());
@@ -15,6 +18,9 @@ app.use(express.static(__dirname));
 app.use('/api/auth', authRoutes); // RF-01, RF-02
 app.use('/api/mesas', mesaRoutes); // RF-21
 app.use('/api/admin/usuarios', usuarioRoutes); // RF-11 al RF-15
+app.use('/api/proveedores', proveedorRoutes);
+app.use('/api/unidades', unidadRoutes);
+app.use('/api/ubicaciones', ubicacionRoutes);
 
 const PORT = process.env.PORT || 8080; // Puerto estándar para Cloud Run [8]
 app.listen(PORT, () => {
