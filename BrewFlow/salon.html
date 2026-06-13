@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BrewFlow - Panel de Salón</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 font-sans">
+
+    <nav class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center space-x-4">
+            <span class="text-2xl font-bold text-amber-500">BrewFlow</span>
+            <span class="bg-blue-500/10 text-blue-400 text-xs font-semibold px-2.5 py-0.5 rounded border border-blue-500/20">VISTA SALÓN</span>
+        </div>
+        <div class="flex items-center space-x-6">
+            <a href="usuarios.html" class="text-gray-400 hover:text-white transition">Usuarios</a>
+            <a href="salon.html" class="text-amber-500 font-medium">Salón y Mesas</a>
+            <a id="logoutLink" href="login.html" class="text-red-400 hover:text-red-300 transition text-sm">Cerrar Sesión</a>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto p-6 lg:p-8">
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold tracking-tight">Infraestructura Base del Salón</h2>
+            <p class="text-sm text-gray-400 mt-1">Monitoreo y configuración de la entidad 'mesa'.</p>
+        </div>
+
+        <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 mb-8 flex flex-wrap gap-6 items-center text-sm">
+            <span class="text-gray-400 font-medium">Estados SQL:</span>
+            <div class="flex items-center space-x-2">
+                <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                <span>DISPONIBLE</span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                <span>OCUPADA</span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+                <span>POR PAGAR</span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span class="w-3 h-3 rounded-full bg-gray-500"></span>
+                <span>MANTENCIÓN</span>
+            </div>
+        </div>
+
+        <div id="mesasGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div class="col-span-full text-center text-gray-400">Cargando mesas...</div>
+        </div>
+    </main>
+
+    <script>
+        const token = localStorage.getItem('brewflow_token');
+        if (!token) {
+            window.location.href = 'login.html';
+        }
+
+        const estadoStyles = {
+            LIBRE: { label: 'DISPONIBLE', bg: 'bg-green-900/40', border: 'border-green-500/20', text: 'text-green-300', button: 'Ocupar Mesa', next: 'OCUPADA' },
+            OCUPADA: { label: 'OCUPADA', bg: 'bg-red-900/40', border: 'border-red-500/20', text: 'text-red-300', button: 'Solicitar Pago', next: 'POR_PAGAR' },
+            POR_PAGAR: { label: 'POR PAGAR', bg: 'bg-amber-900/40', border: 'border-amber-500/20', text: 'text-amber-300', button: 'Enviar a Mantención', next: 'MANTENCION' },
+            MANTENCION: { label: 'MANTENCIÓN', bg: 'bg-gray-900', border: 'border-gray-600', text: 'text-gray-400', button: 'Liberar Mesa', next: 'LIBRE' }
+        };
+
+        const renderMesas = (mesas) => {
+            const container = document.getElementById('mesasGrid');
+            if (!mesas || mesas.length === 0) {
+                container.innerHTML = '<div class="col-span-full text-center text-gray-400">No hay mesas registradas.</div>';
+                return;
+            }
+
+            container.innerHTML = mesas.map(mesa => {
+                const style = estadoStyles[mesa.mesa_estado] || { label: mesa.mesa_estado, bg: 'bg-gray-900', border: 'border-gray-600', text: 'text-gray-300', button: 'Actualizar', next: 'LIBRE' };
+                return `
+                    <div class="bg-gray-800 rounded-lg p-6 ${style.border} border-x border-b border-gray-700 flex flex-col justify-between h-44 shadow-md">
+                        <div>
+                            <div class="flex justify-between items-start">
+                                <h3 class="text-xl font-bold text-white">Mesa ${String(mesa.mesa_numero).padStart(2, '0')}</h3>
+                                <span class="text-xs ${style.bg} ${style.text} px-2 py-0.5 rounded border ${style.border}">${style.label}</span>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-1">Capacidad: ${mesa.mesa_capacidad} Personas</p>
+                        </div>
+                        <button onclick="cambiarEstado(${mesa.mesa_id}, '${style.next}')" class="w-full mt-4 bg-gray-700 hover:bg-gray-600 text-white text-xs font-semibold py-2 rounded transition">
+                            ${style.button}
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        };
+
+        const cargarMesas = async () => {
+            try {
+                const response = await fetch('/api/mesas', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error();
+                const mesas = await response.json();
+                renderMesas(mesas);
+            } catch (error) {
+                document.getElementById('mesasGrid').innerHTML = '<div class="col-span-full text-red-400">No se pudieron cargar las mesas.</div>';
+            }
+        };
+
+        window.cambiarEstado = async (mesaId, nuevoEstado) => {
+            try {
+                const response = await fetch('/api/mesas/estado', {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ mesa_id: mesaId, nuevo_estado: nuevoEstado })
+                });
+                if (!response.ok) throw new Error();
+                await cargarMesas();
+            } catch (error) {
+                alert('Error al actualizar la mesa.');
+            }
+        };
+
+        cargarMesas();
+    </script>
+</body>
+</html>

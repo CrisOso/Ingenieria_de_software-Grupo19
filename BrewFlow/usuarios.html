@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BrewFlow - Gestión de Usuarios</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 font-sans">
+
+    <nav class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center space-x-4">
+            <span class="text-2xl font-bold text-amber-500">BrewFlow</span>
+            <span class="bg-amber-500/10 text-amber-400 text-xs font-semibold px-2.5 py-0.5 rounded border border-amber-500/20">ADMIN PANEL</span>
+        </div>
+        <div class="flex items-center space-x-6">
+            <a href="usuarios.html" class="text-amber-500 font-medium">Usuarios</a>
+            <a href="salon.html" class="text-gray-400 hover:text-white transition">Salón y Mesas</a>
+            <a href="login.html" class="text-red-400 hover:text-red-300 transition text-sm">Cerrar Sesión</a>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto p-6 lg:p-8">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+            <div>
+                <h2 class="text-2xl font-bold tracking-tight">Control de Usuarios y Roles</h2>
+                <p class="text-sm text-gray-400 mt-1">Mantenimiento de las entidades 'usuario' y 'rol'.</p>
+            </div>
+            <button id="createUserButton" class="bg-amber-500 hover:bg-amber-600 text-gray-900 font-semibold px-4 py-2 rounded-md text-sm transition">
+                + Nuevo Usuario
+            </button>
+        </div>
+
+        <div id="userStatus" class="hidden rounded-lg p-4 mb-6 text-sm"></div>
+
+        <div id="createUserPanel" class="hidden bg-gray-800 p-6 rounded-lg border border-gray-700 mb-6 shadow-lg">
+            <h3 class="text-lg font-semibold text-white mb-4">Crear nuevo usuario</h3>
+            <form id="createUserForm" class="grid gap-4 sm:grid-cols-2">
+                <label class="block text-sm text-gray-300">
+                    RUN
+                    <input name="run" required class="mt-1 w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-white" />
+                </label>
+                <label class="block text-sm text-gray-300">
+                    Nombres
+                    <input name="nombres" required class="mt-1 w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-white" />
+                </label>
+                <label class="block text-sm text-gray-300">
+                    Apellido Paterno
+                    <input name="ap_paterno" required class="mt-1 w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-white" />
+                </label>
+                <label class="block text-sm text-gray-300">
+                    Apellido Materno
+                    <input name="ap_materno" class="mt-1 w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-white" />
+                </label>
+                <label class="block text-sm text-gray-300">
+                    Correo
+                    <input type="email" name="correo" required class="mt-1 w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-white" />
+                </label>
+                <label class="block text-sm text-gray-300">
+                    Contraseña
+                    <input type="password" name="contrasena" required class="mt-1 w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-white" />
+                </label>
+                <label class="block text-sm text-gray-300 sm:col-span-2">
+                    Rol
+                    <select name="rol_id" required class="mt-1 w-full px-3 py-2 rounded-md bg-gray-700 border border-gray-600 text-white">
+                        <option value="1">Admin</option>
+                        <option value="2">Mesero</option>
+                        <option value="3">Caja</option>
+                    </select>
+                </label>
+                <div class="sm:col-span-2 flex gap-3">
+                    <button type="submit" class="bg-amber-500 hover:bg-amber-600 text-gray-900 font-semibold px-4 py-2 rounded-md transition">Guardar Usuario</button>
+                    <button type="button" id="cancelCreateUser" class="bg-gray-700 hover:bg-gray-600 text-white font-semibold px-4 py-2 rounded-md transition">Cancelar</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden shadow-lg">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-750 border-b border-gray-700 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                            <th class="px-6 py-4">ID</th>
+                            <th class="px-6 py-4">Nombre</th>
+                            <th class="px-6 py-4">Email</th>
+                            <th class="px-6 py-4">Rol</th>
+                            <th class="px-6 py-4">Estado</th>
+                            <th class="px-6 py-4 text-right">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody" class="divide-y divide-gray-700 text-sm"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const token = localStorage.getItem('brewflow_token');
+        if (!token) {
+            window.location.href = 'login.html';
+        }
+
+        const userStatus = document.getElementById('userStatus');
+        const createUserPanel = document.getElementById('createUserPanel');
+        const createUserButton = document.getElementById('createUserButton');
+        const cancelCreateUser = document.getElementById('cancelCreateUser');
+        const createUserForm = document.getElementById('createUserForm');
+        const usersTableBody = document.getElementById('usersTableBody');
+        const logoutLink = document.querySelector('a[href="login.html"]');
+
+        const showStatus = (message, type = 'success') => {
+            userStatus.textContent = message;
+            userStatus.className = `rounded-lg p-4 mb-6 text-sm ${type === 'error' ? 'bg-red-900 text-red-200 border border-red-500' : 'bg-green-900 text-green-200 border border-green-500'}`;
+            userStatus.classList.remove('hidden');
+        };
+
+        const hideStatus = () => userStatus.classList.add('hidden');
+
+        const renderUsuarios = (usuarios) => {
+            if (!usuarios || usuarios.length === 0) {
+                usersTableBody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-400">No hay usuarios registrados.</td></tr>';
+                return;
+            }
+
+            usersTableBody.innerHTML = usuarios.map(usuario => {
+                const estadoClass = usuario.usuario_estado_cuenta === 'ACTIVO' ? 'bg-green-900/40 text-green-300 border border-green-500/20' : 'bg-red-900/40 text-red-300 border border-red-500/20';
+                const actionButton = usuario.usuario_estado_cuenta === 'ACTIVO'
+                    ? '<span class="text-gray-400 text-xs">Sin acción</span>'
+                    : `<button onclick="desbloquearUsuario(${usuario.usuario_id})" class="text-amber-400 hover:text-amber-300 font-medium">Desbloquear</button>`;
+                const roleClass = usuario.rol_nombre.toUpperCase() === 'ADMIN'
+                    ? 'bg-purple-900/40 text-purple-300 border border-purple-500/20'
+                    : usuario.rol_nombre.toUpperCase() === 'MESERO'
+                        ? 'bg-blue-900/40 text-blue-300 border border-blue-500/20'
+                        : 'bg-yellow-900/40 text-yellow-300 border border-yellow-500/20';
+                return `
+                    <tr class="hover:bg-gray-750/50">
+                        <td class="px-6 py-4 font-mono text-gray-400">${usuario.usuario_id}</td>
+                        <td class="px-6 py-4 font-medium text-white">${usuario.usuario_nombres} ${usuario.usuario_apellido_paterno}</td>
+                        <td class="px-6 py-4 text-gray-300">${usuario.usuario_correo}</td>
+                        <td class="px-6 py-4"><span class="px-2 py-1 rounded text-xs ${roleClass}">${usuario.rol_nombre}</span></td>
+                        <td class="px-6 py-4"><span class="px-2 py-1 rounded text-xs ${estadoClass}">${usuario.usuario_estado_cuenta.toLowerCase()}</span></td>
+                        <td class="px-6 py-4 text-right space-x-2">${actionButton}</td>
+                    </tr>
+                `;
+            }).join('');
+        };
+
+        const cargarUsuarios = async () => {
+            hideStatus();
+            try {
+                const response = await fetch('/api/admin/usuarios', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) {
+                    throw new Error('No autorizado o error del servidor');
+                }
+                const usuarios = await response.json();
+                renderUsuarios(usuarios);
+            } catch (error) {
+                renderUsuarios([]);
+                showStatus('No se pudieron cargar los usuarios. Inicia sesión de nuevo si es necesario.', 'error');
+            }
+        };
+
+        const desbloquearUsuario = async (usuarioId) => {
+            try {
+                const response = await fetch(`/api/admin/usuarios/${usuarioId}/desbloquear`, {
+                    method: 'PATCH',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) {
+                    throw new Error('Error al desbloquear usuario');
+                }
+                showStatus('Usuario desbloqueado correctamente.');
+                cargarUsuarios();
+            } catch (error) {
+                showStatus('No se pudo desbloquear el usuario.', 'error');
+            }
+        };
+
+        window.desbloquearUsuario = desbloquearUsuario;
+
+        createUserButton.addEventListener('click', () => {
+            createUserPanel.classList.remove('hidden');
+            hideStatus();
+        });
+
+        cancelCreateUser.addEventListener('click', () => {
+            createUserPanel.classList.add('hidden');
+            createUserForm.reset();
+        });
+
+        createUserForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(createUserForm);
+            const body = {
+                run: formData.get('run'),
+                nombres: formData.get('nombres'),
+                ap_paterno: formData.get('ap_paterno'),
+                ap_materno: formData.get('ap_materno'),
+                correo: formData.get('correo'),
+                contrasena: formData.get('contrasena'),
+                rol_id: Number(formData.get('rol_id'))
+            };
+
+            try {
+                const response = await fetch('/api/admin/usuarios', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(body)
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.message || 'Error al crear usuario');
+                }
+                showStatus('Usuario creado correctamente.');
+                createUserForm.reset();
+                createUserPanel.classList.add('hidden');
+                cargarUsuarios();
+            } catch (error) {
+                showStatus(error.message || 'No se pudo crear el usuario.', 'error');
+            }
+        });
+
+        logoutLink.addEventListener('click', () => {
+            localStorage.removeItem('brewflow_token');
+            localStorage.removeItem('brewflow_rol');
+        });
+
+        cargarUsuarios();
+    </script>
+
+</body>
+</html>
