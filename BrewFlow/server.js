@@ -7,6 +7,11 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(__dirname));
 
+// Redirigir la raíz al login para evitar "Not found" en http://localhost:8080/
+app.get('/', (req, res) => {
+    res.redirect('/login.html');
+});
+
 // Rutas funcionales del Incremento 1
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/dashboard', require('./routes/dashboard'));
