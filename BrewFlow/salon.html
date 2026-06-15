@@ -1,126 +1,261 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BrewFlow - Panel de Salón</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BrewFlow - Salón / Mesas</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-900 text-gray-100 font-sans">
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+  <main id="main" class="lg:ml-72 p-6">
+    <div id="mensaje" class="hidden"></div>
 
-    <nav class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex justify-between items-center">
-        <div class="flex items-center space-x-4">
-            <span class="text-2xl font-bold text-amber-500">BrewFlow</span>
-            <span class="bg-blue-500/10 text-blue-400 text-xs font-semibold px-2.5 py-0.5 rounded border border-blue-500/20">VISTA SALÓN</span>
-        </div>
-        <div class="flex items-center space-x-6">
-            <a href="usuarios.html" class="text-gray-400 hover:text-white transition">Usuarios</a>
-            <a href="salon.html" class="text-amber-500 font-medium">Salón y Mesas</a>
-            <a id="logoutLink" href="login.html" class="text-red-400 hover:text-red-300 transition text-sm">Cerrar Sesión</a>
-        </div>
-    </nav>
+    <section class="grid gap-4 md:grid-cols-4 mb-6" id="cardsResumen">
+      <div class="bg-gray-800 border border-gray-700 rounded-lg p-5">
+        <div class="text-gray-400 text-sm">Mesas totales</div>
+        <div id="totalMesas" class="text-3xl font-bold text-amber-400 mt-2">0</div>
+      </div>
+      <div class="bg-gray-800 border border-gray-700 rounded-lg p-5">
+        <div class="text-gray-400 text-sm">Disponibles</div>
+        <div id="mesasDisponibles" class="text-3xl font-bold text-green-400 mt-2">0</div>
+      </div>
+      <div class="bg-gray-800 border border-gray-700 rounded-lg p-5">
+        <div class="text-gray-400 text-sm">Ocupadas</div>
+        <div id="mesasOcupadas" class="text-3xl font-bold text-red-400 mt-2">0</div>
+      </div>
+      <div class="bg-gray-800 border border-gray-700 rounded-lg p-5">
+        <div class="text-gray-400 text-sm">Reservadas / inactivas</div>
+        <div id="mesasOtros" class="text-3xl font-bold text-blue-300 mt-2">0</div>
+      </div>
+    </section>
 
-    <main class="max-w-7xl mx-auto p-6 lg:p-8">
-        <div class="mb-8">
-            <h2 class="text-2xl font-bold tracking-tight">Infraestructura Base del Salón</h2>
-            <p class="text-sm text-gray-400 mt-1">Monitoreo y configuración de la entidad 'mesa'.</p>
+    <section class="bg-gray-800 rounded-lg border border-gray-700 p-5 mb-6">
+      <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+        <div>
+          <h3 class="font-semibold text-lg">Mapa operativo del salón</h3>
+          <p class="text-gray-400 text-sm mt-1">Visualización y cambio de estado de mesas mediante los valores del enum PostgreSQL.</p>
         </div>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <select id="filtroEstado" class="bg-gray-700 rounded p-2 border border-gray-600 text-sm">
+            <option value="todos">Todos los estados</option>
+            <option value="disponible">Disponible</option>
+            <option value="ocupada">Ocupada</option>
+            <option value="reservada">Reservada</option>
+            <option value="inactiva">Inactiva</option>
+          </select>
+          <button id="btnRecargar" class="bg-amber-500 hover:bg-amber-400 text-gray-950 font-semibold rounded px-4 py-2 text-sm">Recargar mesas</button>
+        </div>
+      </div>
 
-        <div class="bg-gray-800 p-4 rounded-lg border border-gray-700 mb-8 flex flex-wrap gap-6 items-center text-sm">
-            <span class="text-gray-400 font-medium">Estados SQL:</span>
-            <div class="flex items-center space-x-2">
-                <span class="w-3 h-3 rounded-full bg-green-500"></span>
-                <span>DISPONIBLE</span>
+      <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 text-sm">
+        <div class="flex items-center gap-2 bg-gray-900/60 border border-gray-700 rounded p-3">
+          <span class="w-3 h-3 rounded-full bg-green-500"></span><span>Disponible</span>
+        </div>
+        <div class="flex items-center gap-2 bg-gray-900/60 border border-gray-700 rounded p-3">
+          <span class="w-3 h-3 rounded-full bg-red-500"></span><span>Ocupada</span>
+        </div>
+        <div class="flex items-center gap-2 bg-gray-900/60 border border-gray-700 rounded p-3">
+          <span class="w-3 h-3 rounded-full bg-amber-500"></span><span>Reservada</span>
+        </div>
+        <div class="flex items-center gap-2 bg-gray-900/60 border border-gray-700 rounded p-3">
+          <span class="w-3 h-3 rounded-full bg-gray-500"></span><span>Inactiva</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="mesasGrid" class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+      <div class="col-span-full text-center text-gray-400 bg-gray-800 border border-gray-700 rounded-lg p-6">Cargando mesas...</div>
+    </section>
+
+    <section class="mt-6 bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+      <div class="p-4 border-b border-gray-700 flex justify-between items-center gap-3">
+        <div>
+          <h3 class="font-semibold text-lg">Listado de mesas</h3>
+          <p class="text-gray-400 text-sm">Vista tabular para evidencia y control rápido.</p>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-900 text-gray-300">
+            <tr>
+              <th class="p-3 text-left">Mesa</th>
+              <th class="p-3 text-left">Capacidad</th>
+              <th class="p-3 text-left">Estado</th>
+              <th class="p-3 text-left">Usuario asociado</th>
+              <th class="p-3 text-left">Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tablaMesas"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="app-common.js"></script>
+  <script>
+    montarLayout('Salón / Mesas', 'Control visual de mesas conectado a PostgreSQL.');
+
+    const estilosEstado = {
+      disponible: {
+        label: 'Disponible',
+        badge: 'bg-green-900/50 text-green-200 border-green-600/40',
+        card: 'border-green-600/40 bg-green-950/20',
+        dot: 'bg-green-500',
+        next: 'ocupada',
+        action: 'Marcar ocupada'
+      },
+      ocupada: {
+        label: 'Ocupada',
+        badge: 'bg-red-900/50 text-red-200 border-red-600/40',
+        card: 'border-red-600/40 bg-red-950/20',
+        dot: 'bg-red-500',
+        next: 'reservada',
+        action: 'Marcar reservada'
+      },
+      reservada: {
+        label: 'Reservada',
+        badge: 'bg-amber-900/50 text-amber-200 border-amber-600/40',
+        card: 'border-amber-600/40 bg-amber-950/20',
+        dot: 'bg-amber-500',
+        next: 'disponible',
+        action: 'Liberar mesa'
+      },
+      inactiva: {
+        label: 'Inactiva',
+        badge: 'bg-gray-700 text-gray-200 border-gray-500/40',
+        card: 'border-gray-600 bg-gray-950/40',
+        dot: 'bg-gray-500',
+        next: 'disponible',
+        action: 'Activar mesa'
+      }
+    };
+
+    let mesas = [];
+
+    function getEstilo(estado) {
+      return estilosEstado[estado] || estilosEstado.disponible;
+    }
+
+    function mesasFiltradas() {
+      const filtro = document.getElementById('filtroEstado').value;
+      return filtro === 'todos' ? mesas : mesas.filter(m => m.mesa_estado === filtro);
+    }
+
+    function actualizarResumen() {
+      const total = mesas.length;
+      const disponibles = mesas.filter(m => m.mesa_estado === 'disponible').length;
+      const ocupadas = mesas.filter(m => m.mesa_estado === 'ocupada').length;
+      const otros = mesas.filter(m => ['reservada', 'inactiva'].includes(m.mesa_estado)).length;
+
+      document.getElementById('totalMesas').textContent = total;
+      document.getElementById('mesasDisponibles').textContent = disponibles;
+      document.getElementById('mesasOcupadas').textContent = ocupadas;
+      document.getElementById('mesasOtros').textContent = otros;
+    }
+
+    function renderCards() {
+      const data = mesasFiltradas();
+      const contenedor = document.getElementById('mesasGrid');
+
+      if (!data.length) {
+        contenedor.innerHTML = '<div class="col-span-full text-center text-gray-400 bg-gray-800 border border-gray-700 rounded-lg p-6">No hay mesas para el filtro seleccionado.</div>';
+        return;
+      }
+
+      contenedor.innerHTML = data.map(mesa => {
+        const e = getEstilo(mesa.mesa_estado);
+        return `
+          <article class="rounded-lg border ${e.card} p-5 shadow-lg">
+            <div class="flex justify-between items-start gap-3">
+              <div>
+                <p class="text-xs uppercase tracking-wide text-gray-400">Mesa</p>
+                <h3 class="text-3xl font-bold text-white mt-1">${String(mesa.mesa_numero).padStart(2, '0')}</h3>
+              </div>
+              <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full border text-xs font-semibold ${e.badge}">
+                <span class="w-2 h-2 rounded-full ${e.dot}"></span>${e.label}
+              </span>
             </div>
-            <div class="flex items-center space-x-2">
-                <span class="w-3 h-3 rounded-full bg-red-500"></span>
-                <span>OCUPADA</span>
+            <div class="mt-5 grid grid-cols-2 gap-3 text-sm">
+              <div class="bg-gray-900/60 border border-gray-700 rounded p-3">
+                <div class="text-gray-400">Capacidad</div>
+                <div class="font-semibold text-white mt-1">${mesa.mesa_capacidad} personas</div>
+              </div>
+              <div class="bg-gray-900/60 border border-gray-700 rounded p-3">
+                <div class="text-gray-400">Usuario ID</div>
+                <div class="font-semibold text-white mt-1">${mesa.usuario_id || 'Sin asignar'}</div>
+              </div>
             </div>
-            <div class="flex items-center space-x-2">
-                <span class="w-3 h-3 rounded-full bg-amber-500"></span>
-                <span>POR PAGAR</span>
+            <div class="mt-5 grid gap-2 sm:grid-cols-2">
+              <button onclick="cambiarEstado(${mesa.mesa_id}, '${e.next}')" class="bg-amber-500 hover:bg-amber-400 text-gray-950 font-semibold rounded px-3 py-2 text-sm transition">
+                ${e.action}
+              </button>
+              <select onchange="cambiarEstado(${mesa.mesa_id}, this.value)" class="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm">
+                ${Object.entries(estilosEstado).map(([valor, opt]) => `<option value="${valor}" ${valor === mesa.mesa_estado ? 'selected' : ''}>${opt.label}</option>`).join('')}
+              </select>
             </div>
-            <div class="flex items-center space-x-2">
-                <span class="w-3 h-3 rounded-full bg-gray-500"></span>
-                <span>MANTENCIÓN</span>
-            </div>
-        </div>
+          </article>
+        `;
+      }).join('');
+    }
 
-        <div id="mesasGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            <div class="col-span-full text-center text-gray-400">Cargando mesas...</div>
-        </div>
-    </main>
+    function renderTabla() {
+      const data = mesasFiltradas();
+      const tbody = document.getElementById('tablaMesas');
+      if (!data.length) {
+        tbody.innerHTML = '<tr><td class="p-3 text-gray-400" colspan="5">Sin datos para mostrar.</td></tr>';
+        return;
+      }
 
-    <script>
-        const token = localStorage.getItem('brewflow_token');
-        if (!token) {
-            window.location.href = 'login.html';
-        }
+      tbody.innerHTML = data.map(mesa => {
+        const e = getEstilo(mesa.mesa_estado);
+        return `
+          <tr class="border-t border-gray-700">
+            <td class="p-3 font-semibold">Mesa ${mesa.mesa_numero}</td>
+            <td class="p-3">${mesa.mesa_capacidad} personas</td>
+            <td class="p-3"><span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full border text-xs font-semibold ${e.badge}"><span class="w-2 h-2 rounded-full ${e.dot}"></span>${e.label}</span></td>
+            <td class="p-3">${mesa.usuario_id || 'Sin asignar'}</td>
+            <td class="p-3"><button onclick="cambiarEstado(${mesa.mesa_id}, '${e.next}')" class="bg-gray-700 hover:bg-gray-600 rounded px-3 py-1.5 text-xs font-semibold">${e.action}</button></td>
+          </tr>
+        `;
+      }).join('');
+    }
 
-        const estadoStyles = {
-            LIBRE: { label: 'DISPONIBLE', bg: 'bg-green-900/40', border: 'border-green-500/20', text: 'text-green-300', button: 'Ocupar Mesa', next: 'OCUPADA' },
-            OCUPADA: { label: 'OCUPADA', bg: 'bg-red-900/40', border: 'border-red-500/20', text: 'text-red-300', button: 'Solicitar Pago', next: 'POR_PAGAR' },
-            POR_PAGAR: { label: 'POR PAGAR', bg: 'bg-amber-900/40', border: 'border-amber-500/20', text: 'text-amber-300', button: 'Enviar a Mantención', next: 'MANTENCION' },
-            MANTENCION: { label: 'MANTENCIÓN', bg: 'bg-gray-900', border: 'border-gray-600', text: 'text-gray-400', button: 'Liberar Mesa', next: 'LIBRE' }
-        };
+    function renderizar() {
+      actualizarResumen();
+      renderCards();
+      renderTabla();
+    }
 
-        const renderMesas = (mesas) => {
-            const container = document.getElementById('mesasGrid');
-            if (!mesas || mesas.length === 0) {
-                container.innerHTML = '<div class="col-span-full text-center text-gray-400">No hay mesas registradas.</div>';
-                return;
-            }
+    async function cargarMesas() {
+      try {
+        mesas = await api('/api/mesas', { headers: authHeaders });
+        renderizar();
+      } catch (error) {
+        setMensaje('mensaje', error.message || 'No se pudieron cargar las mesas.', false);
+        document.getElementById('mesasGrid').innerHTML = '<div class="col-span-full text-red-300 bg-red-950/30 border border-red-700 rounded-lg p-6">No se pudieron cargar las mesas desde PostgreSQL.</div>';
+        document.getElementById('tablaMesas').innerHTML = '<tr><td class="p-3 text-red-300" colspan="5">Error al cargar mesas.</td></tr>';
+      }
+    }
 
-            container.innerHTML = mesas.map(mesa => {
-                const style = estadoStyles[mesa.mesa_estado] || { label: mesa.mesa_estado, bg: 'bg-gray-900', border: 'border-gray-600', text: 'text-gray-300', button: 'Actualizar', next: 'LIBRE' };
-                return `
-                    <div class="bg-gray-800 rounded-lg p-6 ${style.border} border-x border-b border-gray-700 flex flex-col justify-between h-44 shadow-md">
-                        <div>
-                            <div class="flex justify-between items-start">
-                                <h3 class="text-xl font-bold text-white">Mesa ${String(mesa.mesa_numero).padStart(2, '0')}</h3>
-                                <span class="text-xs ${style.bg} ${style.text} px-2 py-0.5 rounded border ${style.border}">${style.label}</span>
-                            </div>
-                            <p class="text-xs text-gray-400 mt-1">Capacidad: ${mesa.mesa_capacidad} Personas</p>
-                        </div>
-                        <button onclick="cambiarEstado(${mesa.mesa_id}, '${style.next}')" class="w-full mt-4 bg-gray-700 hover:bg-gray-600 text-white text-xs font-semibold py-2 rounded transition">
-                            ${style.button}
-                        </button>
-                    </div>
-                `;
-            }).join('');
-        };
+    async function cambiarEstado(mesaId, nuevoEstado) {
+      try {
+        await api(`/api/mesas/${mesaId}/estado`, {
+          method: 'PATCH',
+          headers: jsonHeaders,
+          body: JSON.stringify({ nuevo_estado: nuevoEstado })
+        });
+        setMensaje('mensaje', 'Estado de mesa actualizado correctamente.');
+        await cargarMesas();
+      } catch (error) {
+        setMensaje('mensaje', error.message || 'Error al actualizar la mesa.', false);
+        renderizar();
+      }
+    }
 
-        const cargarMesas = async () => {
-            try {
-                const response = await fetch('/api/mesas', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!response.ok) throw new Error();
-                const mesas = await response.json();
-                renderMesas(mesas);
-            } catch (error) {
-                document.getElementById('mesasGrid').innerHTML = '<div class="col-span-full text-red-400">No se pudieron cargar las mesas.</div>';
-            }
-        };
+    document.getElementById('filtroEstado').addEventListener('change', renderizar);
+    document.getElementById('btnRecargar').addEventListener('click', cargarMesas);
 
-        window.cambiarEstado = async (mesaId, nuevoEstado) => {
-            try {
-                const response = await fetch('/api/mesas/estado', {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ mesa_id: mesaId, nuevo_estado: nuevoEstado })
-                });
-                if (!response.ok) throw new Error();
-                await cargarMesas();
-            } catch (error) {
-                alert('Error al actualizar la mesa.');
-            }
-        };
-
-        cargarMesas();
-    </script>
+    cargarMesas();
+  </script>
 </body>
 </html>

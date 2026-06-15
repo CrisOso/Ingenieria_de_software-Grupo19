@@ -1,60 +1,110 @@
 const db = require('../db');
 const bcrypt = require('bcryptjs');
 
-// 1. Crear Usuario (ADMIN) - Ajustado a Base de Datos y UR 1.1
 const crearUsuario = async (req, res) => {
-    const { run, nombres, ap_paterno, ap_materno, correo, contrasena, rol_id } = req.body;
+    const { run, nombres, ap_paterno, ap_materno = null, correo, contrasena, rol_id, estado = 'activo' } = req.body;
+
+    if (!run || !nombres || !ap_paterno || !correo || !contrasena || !rol_id) {
+        return res.status(400).json({ message: 'Debe completar RUN, nombres, apellido paterno, correo, contraseña y rol' });
+    }
+
+    if (!String(correo).toLowerCase().endsWith('@brewflow.cl')) {
+        return res.status(400).json({ message: 'El correo debe pertenecer al dominio oficial @brewflow.cl' });
+    }
+
+    if (!['activo', 'inactivo'].includes(estado)) {
+        return res.status(400).json({ message: 'El estado debe ser activo o inactivo' });
+    }
 
     try {
-        // Validación de Dominio Institucional (Requerimiento A.1)
-        if (!correo.endsWith('@brewflow.cl')) {
-            return res.status(400).json({ message: "Error: El correo debe pertenecer al dominio @brewflow.cl" });
+        const { rows: rolRows } = await db.query('SELECT rol_id FROM public.rol WHERE rol_id = $1', [rol_id]);
+        if (rolRows.length === 0) {
+            return res.status(400).json({ message: 'El rol seleccionado no existe' });
         }
 
-        const salt = await bcrypt.genSalt(10);
-        const hash = await bcrypt.hash(contrasena, salt);
+        const hash = await bcrypt.hash(contrasena, 10);
+        const { rows } = await db.query(`
+            INSERT INTO public.usuario (
+                usuario_run,
+                usuario_nombres,
+                usuario_apellido_paterno,
+                usuario_apellido_materno,
+                usuario_correo,
+                "usuario_contrasena",
+                rol_id,
+                usuario_estado_cuenta
+            ) VALUES ($1, $2, $3, $4, LOWER($5), $6, $7, $8)
+            RETURNING usuario_id, usuario_run, usuario_nombres, usuario_apellido_paterno, usuario_correo, usuario_estado_cuenta, rol_id
+        `, [run.trim(), nombres.trim(), ap_paterno.trim(), ap_materno, correo.trim(), hash, rol_id, estado]);
 
-        // Se usa "usuario_contrase¤a" por el nombre en el dump SQL [1]
-        // Se usa 'activo' en minúsculas por el ENUM de la BD [2]
-        await db.query(
-            `INSERT INTO public.usuario (usuario_run, usuario_nombres, usuario_apellido_paterno,
-            usuario_apellido_materno, usuario_correo, "usuario_contrase¤a", rol_id, usuario_estado_cuenta)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, 'activo')`,
-            [run, nombres, ap_paterno, ap_materno, correo, hash, rol_id]
-        );
-        res.status(201).json({ message: "Usuario creado exitosamente" });
+        res.status(201).json({ message: 'Usuario creado exitosamente en PostgreSQL', usuario: rows[0] });
     } catch (error) {
-        res.status(500).json({ message: "Error al crear usuario", error: error.message });
+        if (error.code === '23505') {
+            return res.status(400).json({ message: 'El RUN o correo ya existe en el sistema' });
+        }
+        res.status(500).json({ message: 'Error al crear usuario', error: error.message });
     }
 };
 
-// 2. Listar Usuarios (Ajustado a esquema real)
 const obtenerUsuarios = async (req, res) => {
     try {
-        const { rows } = await db.query(
-            `SELECT u.usuario_id, u.usuario_run, u.usuario_nombres, u.usuario_apellido_paterno,
-            u.usuario_correo, u.usuario_estado_cuenta, r.rol_nombre
-            FROM public.usuario u JOIN public.rol r ON u.rol_id = r.rol_id`
-        );
+        const { rows } = await db.query(`
+            SELECT 
+                u.usuario_id,
+                u.usuario_run,
+                u.usuario_nombres,
+                u.usuario_apellido_paterno,
+                u.usuario_apellido_materno,
+                u.usuario_correo,
+                u.usuario_estado_cuenta,
+                u.rol_id,
+                r.rol_nombre::text AS rol_nombre
+            FROM public.usuario u
+            JOIN public.rol r ON u.rol_id = r.rol_id
+            ORDER BY u.usuario_id DESC
+        `);
         res.json(rows);
     } catch (error) {
-        res.status(500).json({ message: "Error al obtener usuarios" });
+        res.status(500).json({ message: 'Error al obtener usuarios', error: error.message });
     }
 };
 
-// 3. Desbloquear Cuenta (Relacionado con RF-02)
-const desbloquearUsuario = async (req, res) => {
-    const { id } = req.params;
+const obtenerRoles = async (req, res) => {
     try {
-        // NOTA: La columna usuario_intentos_fallidos debe ser agregada vía ALTER TABLE en la BD [1]
-        await db.query(
-            "UPDATE public.usuario SET usuario_estado_cuenta = 'activo' WHERE usuario_id = $1",
-            [id]
-        );
-        res.json({ message: "Usuario desbloqueado correctamente" });
+        const { rows } = await db.query(`
+            SELECT rol_id, rol_nombre::text AS rol_nombre
+            FROM public.rol
+            ORDER BY rol_id ASC
+        `);
+        res.json(rows);
     } catch (error) {
-        res.status(500).json({ message: "Error al desbloquear usuario" });
+        res.status(500).json({ message: 'Error al obtener roles', error: error.message });
     }
 };
 
-module.exports = { crearUsuario, obtenerUsuarios, desbloquearUsuario };
+const actualizarEstadoUsuario = async (req, res) => {
+    const { id } = req.params;
+    const { estado } = req.body;
+
+    if (!['activo', 'inactivo'].includes(estado)) {
+        return res.status(400).json({ message: 'Estado no válido' });
+    }
+
+    try {
+        const result = await db.query(
+            'UPDATE public.usuario SET usuario_estado_cuenta = $1 WHERE usuario_id = $2',
+            [estado, id]
+        );
+        if (result.rowCount === 0) return res.status(404).json({ message: 'Usuario no encontrado' });
+        res.json({ message: `Usuario marcado como ${estado}` });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al actualizar estado de usuario', error: error.message });
+    }
+};
+
+const desbloquearUsuario = async (req, res) => {
+    req.body.estado = 'activo';
+    return actualizarEstadoUsuario(req, res);
+};
+
+module.exports = { crearUsuario, obtenerUsuarios, obtenerRoles, actualizarEstadoUsuario, desbloquearUsuario };

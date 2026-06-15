@@ -1,9 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { obtenerMetricasDashboard } = require('../controllers/dashboardController');
-const { verificarToken } = require('../middleware/authMiddleware');
+const { verificarToken, requerirRoles } = require('../middleware/authMiddleware');
 
-// UR 9.1: Panel resumen accesible para gestión operativa
-router.get('/resumen', verificarToken, obtenerMetricasDashboard);
+router.get('/resumen', verificarToken, requerirRoles('admin', 'operador_inventario', 'supervisor', 'colaborador'), obtenerMetricasDashboard);
 
 module.exports = router;

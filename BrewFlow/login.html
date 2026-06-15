@@ -19,7 +19,7 @@
                 <label for="email" class="block text-sm font-medium text-gray-300">Correo Electrónico</label>
                 <input type="email" id="email" required 
                     class="mt-1 block w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent" 
-                    placeholder="usuario@brewflow.com">
+                    placeholder="usuario@brewflow.cl">
             </div>
 
             <div>
@@ -45,7 +45,7 @@
         const existingRole = localStorage.getItem('brewflow_rol');
 
         if (existingToken && existingRole) {
-            window.location.href = existingRole === '1' ? 'usuarios.html' : 'salon.html';
+            window.location.href = 'dashboard.html';
         }
 
         const form = document.getElementById('loginForm');
@@ -72,8 +72,10 @@
 
                 localStorage.setItem('brewflow_token', data.token);
                 localStorage.setItem('brewflow_rol', String(data.rol));
+                localStorage.setItem('brewflow_rol_nombre', data.rol_nombre || '');
+                localStorage.setItem('brewflow_usuario', data.usuario?.nombres || email);
                 statusAlert.classList.add('hidden');
-                window.location.href = data.rol === 1 ? 'usuarios.html' : 'salon.html';
+                window.location.href = 'dashboard.html';
             } catch (error) {
                 statusAlert.textContent = 'No se pudo conectar con el servidor';
                 statusAlert.classList.remove('hidden');

@@ -1,50 +1,84 @@
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs'); // RF-01: Cifrado irreversible [53, 54]
+const bcrypt = require('bcryptjs');
 const db = require('../db');
 
 const login = async (req, res) => {
     const { usuario_correo, usuario_contrasena } = req.body;
 
+    if (!usuario_correo || !usuario_contrasena) {
+        return res.status(400).json({ message: 'Debe ingresar correo institucional y contraseña' });
+    }
+
     try {
-        // Validación de Dominio Institucional (Anexo A / UR 1.1) [55-57]
-        if (!usuario_correo.endsWith('@brewflow.cl')) {
-            return res.status(400).json({ message: "Acceso denegado: Use su correo institucional" });
+        const correo = usuario_correo.trim().toLowerCase();
+
+        if (!correo.endsWith('@brewflow.cl')) {
+            return res.status(400).json({ message: 'Acceso denegado: utilice un correo perteneciente al dominio oficial @brewflow.cl' });
         }
 
-        const { rows } = await db.query('SELECT * FROM public.usuario WHERE usuario_correo = $1', [usuario_correo]);
+        const { rows } = await db.query(`
+            SELECT 
+                u.usuario_id,
+                u.usuario_run,
+                u.usuario_nombres,
+                u.usuario_apellido_paterno,
+                u.usuario_correo,
+                u.usuario_estado_cuenta,
+                u."usuario_contrasena" AS usuario_contrasena,
+                u.rol_id,
+                r.rol_nombre::text AS rol_nombre
+            FROM public.usuario u
+            JOIN public.rol r ON r.rol_id = u.rol_id
+            WHERE LOWER(u.usuario_correo) = $1
+        `, [correo]);
+
         const user = rows[0];
-
-        if (!user || user.usuario_estado_cuenta === 'inactivo') { // RF-01 / RF-03 [53, 58]
-            return res.status(401).json({ message: "Credenciales incorrectas o cuenta inactiva" });
+        if (!user) {
+            return res.status(401).json({ message: 'Credenciales incorrectas' });
         }
 
-        // Se usa "usuario_contrase¤a" por el nombre literal en el dump SQL [24]
-        const storedPassword = user["usuario_contrase¤a"];
-        let isMatch = false;
-
-        if (typeof storedPassword === 'string' && storedPassword.startsWith('$2')) {
-            isMatch = await bcrypt.compare(usuario_contrasena, storedPassword);
-        } else {
-            // Compatibilidad con la base de datos actual del dump, que contiene contraseñas en texto plano
-            isMatch = usuario_contrasena === storedPassword;
+        if (user.usuario_estado_cuenta !== 'activo') {
+            return res.status(403).json({ message: 'Cuenta inactiva. Contacte al administrador.' });
         }
 
-        if (isMatch) {
-            const token = jwt.sign(
-                { id: user.usuario_id, rol_id: user.rol_id },
-                process.env.JWT_SECRET,
-                { expiresIn: '30m' } // Sesión de 30 min según requerimiento [59, 60]
-            );
-            return res.json({ token, rol: user.rol_id });
+        const storedPassword = user.usuario_contrasena;
+        const passwordOk = typeof storedPassword === 'string' && storedPassword.startsWith('$2')
+            ? await bcrypt.compare(usuario_contrasena, storedPassword)
+            : usuario_contrasena === storedPassword;
+
+        if (!passwordOk) {
+            return res.status(401).json({ message: 'Credenciales incorrectas' });
         }
-        res.status(401).json({ message: "Credenciales incorrectas" });
+
+        const token = jwt.sign(
+            {
+                id: user.usuario_id,
+                rol_id: user.rol_id,
+                rol_nombre: user.rol_nombre
+            },
+            process.env.JWT_SECRET || 'brewflow_dev_secret',
+            { expiresIn: process.env.JWT_EXPIRES_IN || '2h' }
+        );
+
+        return res.json({
+            token,
+            rol: user.rol_id,
+            rol_nombre: user.rol_nombre,
+            usuario: {
+                id: user.usuario_id,
+                correo: user.usuario_correo,
+                nombres: user.usuario_nombres,
+                apellido_paterno: user.usuario_apellido_paterno,
+                estado: user.usuario_estado_cuenta
+            }
+        });
     } catch (error) {
-        res.status(500).json({ message: "Error interno del servidor", error: error.message });
+        res.status(500).json({ message: 'Error interno del servidor', error: error.message });
     }
 };
 
 const logout = async (req, res) => {
-    return res.json({ message: "Sesión cerrada correctamente" });
+    return res.json({ message: 'Sesión cerrada correctamente' });
 };
 
 module.exports = { login, logout };

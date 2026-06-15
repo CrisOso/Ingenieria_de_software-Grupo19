@@ -1,4 +1,12 @@
 {
+  "name": "brewflow-incremento1",
+  "version": "1.0.0",
+  "description": "BrewFlow - Entrega funcional Incremento 1",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",

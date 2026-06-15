@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { crearUbicacion, obtenerUbicaciones, inactivarUbicacion } = require('../controllers/ubicacionController');
-const { verificarToken } = require('../middleware/authMiddleware');
+const { verificarToken, esInventario } = require('../middleware/authMiddleware');
 
-router.get('/', verificarToken, obtenerUbicaciones);
-router.post('/', verificarToken, crearUbicacion);
-router.put('/inactivar/:id', verificarToken, inactivarUbicacion);
+router.get('/', verificarToken, esInventario, obtenerUbicaciones);
+router.post('/', verificarToken, esInventario, crearUbicacion);
+router.put('/inactivar/:id', verificarToken, esInventario, inactivarUbicacion);
 
 module.exports = router;
