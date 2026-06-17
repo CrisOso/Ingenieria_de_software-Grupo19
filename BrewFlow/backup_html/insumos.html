@@ -53,8 +53,8 @@
 
         async function cargarSelects() {
             const [unidadesRes, productosRes] = await Promise.all([
-                fetch(`${API_URL}/api/unidades`, { headers: authHeaders }),
-                fetch(`${API_URL}/api/productos`, { headers: authHeaders })
+                fetch('/api/unidades', { headers: authHeaders }),
+                fetch('/api/productos', { headers: authHeaders })
             ]);
             const unidades = await unidadesRes.json();
             const productos = await productosRes.json();
@@ -64,7 +64,7 @@
 
         async function cargarInsumos() {
             try {
-                const response = await fetch(`${API_URL}/api/insumos`, { headers: authHeaders });
+                const response = await fetch('/api/insumos', { headers: authHeaders });
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.message || 'Error al cargar insumos');
                 document.getElementById('insumosBody').innerHTML = data.map(i => {
@@ -84,7 +84,7 @@
             body.stock_critico = Number(body.stock_critico);
             body.producto_id = body.producto_id ? Number(body.producto_id) : null;
             try {
-                const response = await fetch(`${API_URL}/api/insumos`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders }, body: JSON.stringify(body) });
+                const response = await fetch('/api/insumos', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders }, body: JSON.stringify(body) });
                 const data = await response.json();
                 if (!response.ok) throw new Error(data.message || 'Error al registrar insumo');
                 showStatus(data.message);

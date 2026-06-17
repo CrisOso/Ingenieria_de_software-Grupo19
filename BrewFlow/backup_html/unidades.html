@@ -15,8 +15,8 @@
   <script>
     montarLayout('Unidades de medida', 'UR 2.1: registro con identificador único y clasificación.');
     
-async function cargar(){ const data=await api(`${API_URL}/api/unidades`,{headers:authHeaders}); document.getElementById('tabla').innerHTML=data.map(u=>`<tr class="border-t border-gray-700"><td class="p-3">${u.unidad_medida_id}</td><td class="p-3">${u.unidad_medida_codigo}</td><td class="p-3">${u.unidad_medida_nombre}</td><td class="p-3">${u.unidad_medida_clasificacion}</td><td class="p-3">${u.unidad_medida_estado}</td></tr>`).join(''); }
-document.getElementById('form').addEventListener('submit',async e=>{ e.preventDefault(); const body=Object.fromEntries(new FormData(e.target).entries()); try{ await api(`${API_URL}/api/unidades`,{method:'POST',headers:jsonHeaders,body:JSON.stringify(body)}); setMensaje('mensaje','Unidad registrada correctamente'); e.target.reset(); cargar(); }catch(err){setMensaje('mensaje',err.message,false);} });
+async function cargar(){ const data=await api('/api/unidades',{headers:authHeaders}); document.getElementById('tabla').innerHTML=data.map(u=>`<tr class="border-t border-gray-700"><td class="p-3">${u.unidad_medida_id}</td><td class="p-3">${u.unidad_medida_codigo}</td><td class="p-3">${u.unidad_medida_nombre}</td><td class="p-3">${u.unidad_medida_clasificacion}</td><td class="p-3">${u.unidad_medida_estado}</td></tr>`).join(''); }
+document.getElementById('form').addEventListener('submit',async e=>{ e.preventDefault(); const body=Object.fromEntries(new FormData(e.target).entries()); try{ await api('/api/unidades',{method:'POST',headers:jsonHeaders,body:JSON.stringify(body)}); setMensaje('mensaje','Unidad registrada correctamente'); e.target.reset(); cargar(); }catch(err){setMensaje('mensaje',err.message,false);} });
 cargar().catch(e=>setMensaje('mensaje',e.message,false));
 
   </script>
