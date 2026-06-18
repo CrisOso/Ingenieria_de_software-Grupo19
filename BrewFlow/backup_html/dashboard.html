@@ -21,7 +21,7 @@
     
 async function cargar(){
   try{
-    const data=await api(`${API_URL}/api/dashboard/resumen`,{headers:authHeaders});
+    const data=await api('/api/dashboard/resumen',{headers:authHeaders});
     const r=data.resumen;
     const items=[
       ['Productos activos',r.productos_activos],['Unidades activas',r.unidades_activas],['Proveedores activos',r.proveedores_activos],['Ubicaciones activas',r.ubicaciones_activas],
@@ -32,6 +32,7 @@ async function cargar(){
   }catch(e){ setMensaje('mensaje',e.message,false); }
 }
 cargar();
+
   </script>
 </body>
 </html>

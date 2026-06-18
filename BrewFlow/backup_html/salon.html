@@ -228,7 +228,7 @@
 
     async function cargarMesas() {
       try {
-        mesas = await api(`${API_URL}/api/mesas`, { headers: authHeaders });
+        mesas = await api('/api/mesas', { headers: authHeaders });
         renderizar();
       } catch (error) {
         setMensaje('mensaje', error.message || 'No se pudieron cargar las mesas.', false);
@@ -239,7 +239,7 @@
 
     async function cambiarEstado(mesaId, nuevoEstado) {
       try {
-        await api(`${API_URL}/api/mesas/${mesaId}/estado`, {
+        await api(`/api/mesas/${mesaId}/estado`, {
           method: 'PATCH',
           headers: jsonHeaders,
           body: JSON.stringify({ nuevo_estado: nuevoEstado })

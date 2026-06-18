@@ -1,3 +1,4 @@
+const API_URL = 'https://brewflow-api-666030731246.us-central1.run.app';
 const token = localStorage.getItem('brewflow_token');
 const rolNombre = localStorage.getItem('brewflow_rol_nombre') || '';
 const usuarioNombre = localStorage.getItem('brewflow_usuario') || 'Usuario';
