@@ -92,8 +92,8 @@ SELECT producto_codigo, producto_nombre, producto_stock_actual FROM public.produ
 SELECT lote_codigo, producto_id, proveedor_id, lote_cantidad_disponible FROM public.lote ORDER BY lote_id DESC;
 SELECT movimiento_tipo, movimiento_motivo, movimiento_cantidad, producto_id, lote_id FROM public.movimiento_stock ORDER BY movimiento_id DESC;
 
-## 6. Video del proyecto
-El motivo de subirlo en youtube fue por el peso del archivo y como grupo se decidio subir el link en este apartado
-https://youtu.be/Mbi93V0dH_k
 
 ```
+## 6. Video del proyecto
+El motivo de subirlo en youtube fue por el peso del archivo y como grupo se decidio subir el link en este apartado
+- https://youtu.be/Mbi93V0dH_k
