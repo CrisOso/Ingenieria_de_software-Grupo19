@@ -41,7 +41,7 @@ npm start
 4. Abrir:
 
 ```text
-http://localhost:8080/login.html
+http://localhost:8080/v_login.html
 ```
 
 Usuario inicial de pruebas:
@@ -54,18 +54,18 @@ Rol: admin
 
 ## 3. Pantallas principales
 
-- `login.html`: inicio de sesión.
-- `dashboard.html`: resumen operativo.
-- `usuarios.html`: usuarios y perfiles.
-- `unidades.html`: unidades de medida personalizadas.
-- `proveedores.html`: proveedores.
-- `ubicaciones.html`: ubicaciones jerárquicas de bodega.
-- `productos.html`: productos perecibles.
-- `lotes.html`: registro y consulta de lotes.
-- `ingresos.html`: ingreso de stock.
-- `salidas.html`: salida de stock.
-- `movimientos.html`: historial de ingresos y salidas.
-- `salon.html`: visualización de mesas.
+- `v_login.html`: inicio de sesión.
+- `v_dashboard.html`: resumen operativo.
+- `v_usuarios.html`: usuarios y perfiles.
+- `v_unidades.html`: unidades de medida personalizadas.
+- `v_proveedores.html`: proveedores.
+- `v_ubicaciones.html`: ubicaciones jerárquicas de bodega.
+- `v_productos.html`: productos perecibles.
+- `v_lotes.html`: registro y consulta de lotes.
+- `v_ingresos.html`: ingreso de stock.
+- `v_salidas.html`: salida de stock.
+- `v_movimientos.html`: historial de ingresos y salidas.
+- `v_salon.html`: visualización de mesas.
 
 ## 4. Orden sugerido para probar la demo
 

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { registrarIngreso, registrarSalida, obtenerMovimientos } = require('../controllers/movimientoController');
+const { registrarIngreso, registrarSalida, obtenerMovimientos } = require('../controllers/c_movimientoController');
 const { verificarToken, esInventario } = require('../middleware/authMiddleware');
 
 router.get('/', verificarToken, esInventario, obtenerMovimientos);

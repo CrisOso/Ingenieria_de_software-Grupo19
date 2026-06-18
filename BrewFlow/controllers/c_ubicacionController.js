@@ -28,26 +28,72 @@ const crearUbicacion = async (req, res) => {
     if (!codigo || !nombre || !tipo) {
         return res.status(400).json({ message: 'Debe indicar código, nombre y tipo de ubicación' });
     }
+
+    const codigoLimpio = codigo.trim().toUpperCase();
+    const nombreLimpio = nombre.trim();
+    const padreIdNormalizado = padre_id ? Number(padre_id) : null;
+
+    if (!codigoLimpio || !nombreLimpio) {
+        return res.status(400).json({ message: 'Código y nombre de ubicación no pueden quedar vacíos' });
+    }
+
     if (!tipos.includes(tipo)) {
         return res.status(400).json({ message: 'Tipo de ubicación no válido' });
     }
 
+    if (padre_id && (!Number.isInteger(padreIdNormalizado) || padreIdNormalizado <= 0)) {
+        return res.status(400).json({ message: 'La ubicación padre no tiene un identificador válido' });
+    }
+
     try {
-        if (padre_id) {
-            const { rows: padreRows } = await db.query('SELECT ubicacion_id FROM public.ubicacion_bodega WHERE ubicacion_id = $1', [padre_id]);
-            if (padreRows.length === 0) return res.status(400).json({ message: 'La ubicación padre no existe' });
+        if (padreIdNormalizado) {
+            const { rows: padreRows } = await db.query(
+                'SELECT ubicacion_id FROM public.ubicacion_bodega WHERE ubicacion_id = $1',
+                [padreIdNormalizado]
+            );
+
+            if (padreRows.length === 0) {
+                return res.status(400).json({ message: 'La ubicación padre no existe' });
+            }
+        }
+
+        const { rows: duplicadas } = await db.query(`
+            SELECT ubicacion_id
+            FROM public.ubicacion_bodega
+            WHERE LOWER(TRIM(ubicacion_nombre)) = LOWER($1)
+              AND (
+                    (ubicacion_padre_id IS NULL AND $2::integer IS NULL)
+                    OR ubicacion_padre_id = $2::integer
+                  )
+            LIMIT 1
+        `, [nombreLimpio, padreIdNormalizado]);
+
+        if (duplicadas.length > 0) {
+            return res.status(400).json({
+                message: 'Ya existe una ubicación con ese nombre en el mismo nivel jerárquico'
+            });
         }
 
         const { rows } = await db.query(`
             INSERT INTO public.ubicacion_bodega
             (ubicacion_codigo, ubicacion_nombre, ubicacion_tipo, ubicacion_padre_id)
-            VALUES (UPPER($1), $2, $3, $4)
+            VALUES ($1, $2, $3, $4)
             RETURNING *
-        `, [codigo.trim(), nombre.trim(), tipo, padre_id || null]);
-        res.status(201).json({ message: 'Ubicación registrada correctamente', ubicacion: rows[0] });
+        `, [codigoLimpio, nombreLimpio, tipo, padreIdNormalizado]);
+
+        res.status(201).json({
+            message: 'Ubicación registrada correctamente',
+            ubicacion: rows[0]
+        });
     } catch (error) {
-        if (error.code === '23505') return res.status(400).json({ message: 'Ya existe una ubicación con ese código' });
-        res.status(500).json({ message: 'Error al registrar ubicación', error: error.message });
+        if (error.code === '23505') {
+            return res.status(400).json({ message: 'Ya existe una ubicación con ese código' });
+        }
+
+        res.status(500).json({
+            message: 'Error al registrar ubicación',
+            error: error.message
+        });
     }
 };
 

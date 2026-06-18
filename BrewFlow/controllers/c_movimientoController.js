@@ -1,5 +1,5 @@
 const db = require('../db');
-const { registrarLote } = require('./loteController');
+const { registrarLote } = require('./c_loteController');
 
 const registrarIngreso = async (req, res) => {
     return registrarLote(req, res);
@@ -8,7 +8,7 @@ const registrarIngreso = async (req, res) => {
 const registrarSalida = async (req, res) => {
     const { lote_id, producto_id, cantidad, motivo, fecha = new Date().toISOString(), observacion = null } = req.body;
     const cantidadSalida = Number(cantidad);
-    const motivosPermitidos = ['venta', 'consumo_interno', 'merma', 'descarte', 'ajuste'];
+    const motivosPermitidos = ['venta', 'consumo_interno', 'merma', 'descarte'];
 
     if (!lote_id || !producto_id || !cantidad || !motivo) {
         return res.status(400).json({ message: 'Debe indicar producto, lote, cantidad y motivo de salida' });

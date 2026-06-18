@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { obtenerUnidades, crearUnidad, cambiarEstadoUnidad } = require('../controllers/unidadMedidaController');
+const { obtenerUnidades, crearUnidad, cambiarEstadoUnidad } = require('../controllers/c_unidadMedidaController');
 const { verificarToken, esInventario } = require('../middleware/authMiddleware');
 
 router.get('/', verificarToken, esInventario, obtenerUnidades);

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { crearProveedor, obtenerProveedores, cambiarEstadoProveedor, eliminarProveedor } = require('../controllers/proveedorController');
+const { crearProveedor, obtenerProveedores, cambiarEstadoProveedor, eliminarProveedor } = require('../controllers/c_proveedorController');
 const { verificarToken, esInventario } = require('../middleware/authMiddleware');
 
 router.get('/', verificarToken, esInventario, obtenerProveedores);

@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { crearUsuario, obtenerUsuarios, obtenerRoles, actualizarEstadoUsuario, desbloquearUsuario } = require('../controllers/userController');
+const { crearUsuario, obtenerUsuarios, obtenerRoles, actualizarEstadoUsuario, desbloquearUsuario } = require('../controllers/c_userController');
 const { verificarToken, esGestionUsuarios } = require('../middleware/authMiddleware');
 
 router.get('/roles', verificarToken, esGestionUsuarios, obtenerRoles);

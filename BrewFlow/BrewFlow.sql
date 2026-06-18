@@ -231,7 +231,7 @@ CREATE TABLE public.movimiento_stock (
     proveedor_id integer REFERENCES public.proveedor(proveedor_id),
     usuario_id integer REFERENCES public.usuario(usuario_id),
     CONSTRAINT movimiento_tipo_chk CHECK (movimiento_tipo IN ('ingreso', 'salida')),
-    CONSTRAINT movimiento_motivo_chk CHECK (movimiento_motivo IS NULL OR movimiento_motivo IN ('venta', 'consumo_interno', 'merma', 'descarte', 'ajuste')),
+    CONSTRAINT movimiento_motivo_chk CHECK (movimiento_motivo IS NULL OR movimiento_motivo IN ('venta', 'consumo_interno', 'merma', 'descarte')),
     CONSTRAINT movimiento_cantidad_chk CHECK (movimiento_cantidad > 0)
 );
 
@@ -445,8 +445,7 @@ INSERT INTO public.movimiento_stock (
     (1, 'ingreso', NULL, '2026-06-02 10:00:00', 50.00, 'Carga inicial de inventario', 1, 1, 1, 1),
     (2, 'ingreso', NULL, '2026-06-02 10:05:00', 100.00, 'Carga inicial de inventario', 2, 2, 2, 1),
     (3, 'ingreso', NULL, '2026-06-02 10:10:00', 30.00, 'Carga inicial de inventario', 3, 3, 3, 1),
-    (4, 'ingreso', NULL, '2026-06-02 10:15:00', 40.00, 'Carga inicial de inventario', 4, 4, 3, 1),
-    (5, 'salida', 'merma', '2026-06-03 12:00:00', 2.00, 'Merma de prueba registrada para dashboard', 1, 1, 1, 1);
+    (4, 'ingreso', NULL, '2026-06-02 10:15:00', 40.00, 'Carga inicial de inventario', 4, 4, 3, 1);
 
 UPDATE public.producto p
 SET producto_stock_actual = COALESCE(x.stock, 0)

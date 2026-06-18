@@ -1,5 +1,18 @@
 const db = require('../db');
 
+const normalizarRut = (rut) => String(rut || '')
+    .trim()
+    .replace(/\./g, '')
+    .replace(/\s+/g, '')
+    .toUpperCase();
+
+const tieneFormatoRutValido = (rut) => /^\d{7,8}-[0-9K]$/.test(normalizarRut(rut));
+
+const tieneFormatoCorreoValido = (correo) => {
+    if (!correo) return true; // El correo de contacto es opcional.
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(correo).trim().toLowerCase());
+};
+
 const crearProveedor = async (req, res) => {
     const {
         rut,
@@ -14,10 +27,28 @@ const crearProveedor = async (req, res) => {
         return res.status(400).json({ message: 'Debe indicar RUT y nombre del proveedor' });
     }
 
+    const rutLimpio = normalizarRut(rut);
+    const nombreLimpio = nombre.trim();
+    const correoLimpio = contacto_correo ? contacto_correo.trim().toLowerCase() : null;
+
+    if (!nombreLimpio) {
+        return res.status(400).json({ message: 'El nombre del proveedor no puede quedar vacío' });
+    }
+
+    if (!tieneFormatoRutValido(rutLimpio)) {
+        return res.status(400).json({
+            message: 'El RUT debe tener formato válido, por ejemplo 76543210-1 o 12345678-K'
+        });
+    }
+
+    if (!tieneFormatoCorreoValido(correoLimpio)) {
+        return res.status(400).json({ message: 'El correo de contacto no tiene un formato válido' });
+    }
+
     try {
         const { rows: existenteRows } = await db.query(
             'SELECT proveedor_id FROM public.proveedor WHERE LOWER(proveedor_rut) = LOWER($1)',
-            [rut.trim()]
+            [rutLimpio]
         );
         if (existenteRows.length > 0) {
             return res.status(400).json({ message: 'El proveedor ya se encuentra registrado con ese RUT' });
@@ -33,7 +64,7 @@ const crearProveedor = async (req, res) => {
                 proveedor_condiciones_comerciales
             ) VALUES ($1, $2, $3, $4, LOWER($5), $6)
             RETURNING *
-        `, [rut.trim(), nombre.trim(), contacto_nom, contacto_tel, contacto_correo, condiciones_comerciales]);
+        `, [rutLimpio, nombreLimpio, contacto_nom, contacto_tel, correoLimpio, condiciones_comerciales]);
 
         res.status(201).json({ message: 'Proveedor registrado correctamente', proveedor: rows[0] });
     } catch (error) {

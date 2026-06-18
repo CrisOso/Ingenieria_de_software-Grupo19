@@ -45,7 +45,7 @@
         const existingRole = localStorage.getItem('brewflow_rol');
 
         if (existingToken && existingRole) {
-            window.location.href = 'dashboard.html';
+            window.location.href = 'v_dashboard.html';
         }
 
         const form = document.getElementById('loginForm');
@@ -75,7 +75,7 @@
                 localStorage.setItem('brewflow_rol_nombre', data.rol_nombre || '');
                 localStorage.setItem('brewflow_usuario', data.usuario?.nombres || email);
                 statusAlert.classList.add('hidden');
-                window.location.href = 'dashboard.html';
+                window.location.href = 'v_dashboard.html';
             } catch (error) {
                 statusAlert.textContent = 'No se pudo conectar con el servidor';
                 statusAlert.classList.remove('hidden');

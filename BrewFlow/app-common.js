@@ -2,8 +2,8 @@ const token = localStorage.getItem('brewflow_token');
 const rolNombre = localStorage.getItem('brewflow_rol_nombre') || '';
 const usuarioNombre = localStorage.getItem('brewflow_usuario') || 'Usuario';
 
-if (!token && !location.pathname.endsWith('/login.html')) {
-    window.location.href = 'login.html';
+if (!token && !location.pathname.endsWith('/v_login.html')) {
+    window.location.href = 'v_login.html';
 }
 
 const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
@@ -14,7 +14,7 @@ function cerrarSesion() {
     localStorage.removeItem('brewflow_rol');
     localStorage.removeItem('brewflow_rol_nombre');
     localStorage.removeItem('brewflow_usuario');
-    window.location.href = 'login.html';
+    window.location.href = 'v_login.html';
 }
 
 function formatoFecha(valor) {
@@ -58,17 +58,17 @@ function navHtml(titulo) {
             <div class="uppercase text-xs text-amber-400 mt-1">${rolNombre || 'rol no informado'}</div>
         </div>
         <nav class="mt-6 space-y-1 text-sm">
-            ${link('dashboard.html','Dashboard', titulo)}
-            ${link('usuarios.html','Usuarios y roles', titulo)}
-            ${link('unidades.html','Unidades de medida', titulo)}
-            ${link('proveedores.html','Proveedores', titulo)}
-            ${link('ubicaciones.html','Ubicaciones bodega', titulo)}
-            ${link('productos.html','Productos perecibles', titulo)}
-            ${link('lotes.html','Lotes', titulo)}
-            ${link('ingresos.html','Ingresos de stock', titulo)}
-            ${link('salidas.html','Salidas de stock', titulo)}
-            ${link('movimientos.html','Historial movimientos', titulo)}
-            ${link('salon.html','Salón / Mesas', titulo)}
+            ${link('v_dashboard.html','Dashboard', titulo)}
+            ${link('v_usuarios.html','Usuarios y roles', titulo)}
+            ${link('v_unidades.html','Unidades de medida', titulo)}
+            ${link('v_proveedores.html','Proveedores', titulo)}
+            ${link('v_ubicaciones.html','Ubicaciones bodega', titulo)}
+            ${link('v_productos.html','Productos perecibles', titulo)}
+            ${link('v_lotes.html','Lotes', titulo)}
+            ${link('v_ingresos.html','Ingresos de stock', titulo)}
+            ${link('v_salidas.html','Salidas de stock', titulo)}
+            ${link('v_movimientos.html','Historial movimientos', titulo)}
+            ${link('v_salon.html','Salón / Mesas', titulo)}
         </nav>
         <button onclick="cerrarSesion()" class="mt-6 w-full bg-red-600 hover:bg-red-700 text-white rounded px-3 py-2">Cerrar sesión</button>
     </aside>

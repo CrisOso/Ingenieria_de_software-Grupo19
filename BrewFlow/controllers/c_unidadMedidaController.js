@@ -25,21 +25,57 @@ const crearUnidad = async (req, res) => {
     if (!codigo || !nombre || !clasificacion) {
         return res.status(400).json({ message: 'Debe indicar código, nombre y clasificación' });
     }
+
+    const codigoLimpio = codigo.trim().toLowerCase();
+    const nombreLimpio = nombre.trim();
+
+    if (!codigoLimpio || !nombreLimpio) {
+        return res.status(400).json({ message: 'Código y nombre no pueden quedar vacíos' });
+    }
+
     if (!clasificaciones.includes(clasificacion)) {
         return res.status(400).json({ message: 'Clasificación no válida' });
     }
 
     try {
+        const { rows: duplicadas } = await db.query(`
+            SELECT unidad_medida_id, unidad_medida_codigo, unidad_medida_nombre
+            FROM public.unidad_medida_personalizada
+            WHERE LOWER(TRIM(unidad_medida_codigo)) = LOWER($1)
+               OR LOWER(TRIM(unidad_medida_nombre)) = LOWER($2)
+            LIMIT 1
+        `, [codigoLimpio, nombreLimpio]);
+
+        if (duplicadas.length > 0) {
+            const duplicada = duplicadas[0];
+
+            if (duplicada.unidad_medida_codigo.toLowerCase() === codigoLimpio) {
+                return res.status(400).json({ message: 'Ya existe una unidad con ese código' });
+            }
+
+            return res.status(400).json({ message: 'Ya existe una unidad con ese nombre' });
+        }
+
         const { rows } = await db.query(`
             INSERT INTO public.unidad_medida_personalizada
             (unidad_medida_codigo, unidad_medida_nombre, unidad_medida_clasificacion)
-            VALUES (LOWER($1), $2, $3)
+            VALUES ($1, $2, $3)
             RETURNING *
-        `, [codigo.trim(), nombre.trim(), clasificacion]);
-        res.status(201).json({ message: 'Unidad de medida registrada correctamente', unidad: rows[0] });
+        `, [codigoLimpio, nombreLimpio, clasificacion]);
+
+        res.status(201).json({
+            message: 'Unidad de medida registrada correctamente',
+            unidad: rows[0]
+        });
     } catch (error) {
-        if (error.code === '23505') return res.status(400).json({ message: 'Ya existe una unidad con ese código' });
-        res.status(500).json({ message: 'Error al registrar unidad de medida', error: error.message });
+        if (error.code === '23505') {
+            return res.status(400).json({ message: 'Ya existe una unidad de medida con esos datos' });
+        }
+
+        res.status(500).json({
+            message: 'Error al registrar unidad de medida',
+            error: error.message
+        });
     }
 };
 
