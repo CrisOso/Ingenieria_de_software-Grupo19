@@ -37,8 +37,18 @@ function setMensaje(id, texto, ok = true) {
     el.classList.remove('hidden');
 }
 
+function buildApiUrl(url) {
+    if (/^https?:\/\//i.test(url)) {
+        return url;
+    }
+    if (url.startsWith('/api')) {
+        return `${API_URL}${url}`;
+    }
+    return url;
+}
+
 async function api(url, options = {}) {
-    const response = await fetch(url, options);
+    const response = await fetch(buildApiUrl(url), options);
     let data = null;
     try { data = await response.json(); } catch (e) { data = null; }
     if (response.status === 401 || response.status === 403) {
